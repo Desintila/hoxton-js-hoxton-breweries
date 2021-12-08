@@ -1,7 +1,10 @@
 const state = {
-  breweries: []
+  breweries: [],
+  filter: ''
 }
 const filterSection = document.querySelector('main')
+const searchForm = document.querySelector('#select-state-form')
+
 function createFilterSection() {
   filterSection.innerHTML = ''
   const asideEl = document.createElement('aside')
@@ -43,14 +46,14 @@ function createFilterSection() {
   divEl.append(h3CitiesEl, buttonEl)
   const filterByCityForm = document.createElement('form')
   filterByCityForm.setAttribute('id', 'filter-by-city-form')
-  for (const brewerie of state.breweries) {
+  for (const brewery of state.breweries) {
     const inputEl = document.createElement('input')
     inputEl.setAttribute('type', 'checkbox')
-    inputEl.setAttribute('name', brewerie.city)
-    inputEl.setAttribute('value', brewerie.city)
+    inputEl.setAttribute('name', brewery.city)
+    inputEl.setAttribute('value', brewery.city)
     const labelCityEl = document.createElement('label')
-    labelCityEl.setAttribute('for', brewerie.city)
-    labelCityEl.textContent = brewerie.city
+    labelCityEl.setAttribute('for', brewery.city)
+    labelCityEl.textContent = brewery.city
     filterByCityForm.append(inputEl, labelCityEl)
   }
   asideEl.append(h2El, filterByTypeFormEl, divEl, filterByCityForm)
@@ -58,7 +61,6 @@ function createFilterSection() {
 }
 
 function displayBreweries() {
-
   const h1El = document.createElement('h1')
   h1El.textContent = 'List of Breweries'
   const headerEl = document.createElement('header')
@@ -80,23 +82,26 @@ function displayBreweries() {
   const articleEl = document.createElement('article')
   const ulEl = document.createElement('ul')
   ulEl.setAttribute('class', 'breweries-list')
-  for (const brewerie of state.breweries) {
-    const liEl = document.createElement('li')
+  const listOfBreweries = filterByState()
 
+
+
+  for (const brewery of listOfBreweries) {
+    const liEl = document.createElement('li')
     const h2El = document.createElement('h2')
-    h2El.textContent = brewerie.name
+    h2El.textContent = brewery.name
     const divEl = document.createElement('div')
     divEl.setAttribute('class', 'type')
-    divEl.textContent = brewerie.brewery_type
+    divEl.textContent = brewery.brewery_type
     const addressSectionEl = document.createElement('section')
     addressSectionEl.setAttribute('class', 'address')
     const addressH3El = document.createElement('h3')
     addressH3El.textContent = 'Address:'
     const addressPEl = document.createElement('p')
-    addressPEl.textContent = brewerie.street
+    addressPEl.textContent = brewery.street
     const pEl = document.createElement('p')
     const strongEl = document.createElement('strong')
-    strongEl.textContent = `${brewerie.city}, ${brewerie.postal_code}`
+    strongEl.textContent = `${brewery.city}, ${brewery.postal_code}`
     pEl.append(strongEl)
     addressSectionEl.append(addressH3El, addressPEl, pEl)
     const phoneSectionEl = document.createElement('section')
@@ -104,17 +109,18 @@ function displayBreweries() {
     const phoneH3El = document.createElement('h3')
     phoneH3El.textContent = 'Phone:'
     const phonePEl = document.createElement('p')
-    phonePEl.textContent = brewerie.phone
+    phonePEl.textContent = brewery.phone
     phoneSectionEl.append(phoneH3El, phonePEl)
     const linkSectionEl = document.createElement('section')
     linkSectionEl.setAttribute('class', 'link')
     const linkEl = document.createElement('a')
-    linkEl.setAttribute('href', brewerie.website_url)
+    linkEl.setAttribute('href', brewery.website_url)
     linkEl.setAttribute('target', '_blank')
     linkEl.textContent = 'Visit Website'
     linkSectionEl.append(linkEl)
     liEl.append(h2El, divEl, addressSectionEl, phoneSectionEl, linkSectionEl)
     ulEl.append(liEl)
+
   }
   articleEl.append(ulEl)
   filterSection.append(headerEl, articleEl)
@@ -132,8 +138,23 @@ getData().then(function (dataFromServer) {
   render()
 })
 
+function filterByState() {
+  return state.breweries.filter(function (brewery) {
+    return brewery.state === state.filter && (brewery.brewery_type === 'micro' || brewery.brewery_type === 'regional' || brewery.brewery_type === 'brewpub')
+  })
+}
+function listenToSearch() {
+  searchForm.addEventListener('submit', function (event) {
+    event.preventDefault()
+    state.filter = searchForm.select.value
+    render()
+    searchForm.reset()
+  })
+}
+listenToSearch()
 function render() {
   createFilterSection()
   displayBreweries()
 }
+
 render()
