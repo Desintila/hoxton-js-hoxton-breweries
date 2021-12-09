@@ -1,6 +1,7 @@
 const state = {
   breweries: [],
-  filter: ''
+  filter: '',
+  selectedByType: ''
 }
 const filterSection = document.querySelector('main')
 const searchForm = document.querySelector('#select-state-form')
@@ -46,19 +47,27 @@ function createFilterSection() {
   divEl.append(h3CitiesEl, buttonEl)
   const filterByCityForm = document.createElement('form')
   filterByCityForm.setAttribute('id', 'filter-by-city-form')
-  for (const brewery of state.breweries) {
+  const cities = extractCitiesData(state.breweries)
+  for (const city of cities) {
     const inputEl = document.createElement('input')
     inputEl.setAttribute('type', 'checkbox')
-    inputEl.setAttribute('name', brewery.city)
-    inputEl.setAttribute('value', brewery.city)
+    inputEl.setAttribute('name', city)
+    inputEl.setAttribute('value', city)
+    inputEl.setAttribute('id', city)
     const labelCityEl = document.createElement('label')
-    labelCityEl.setAttribute('for', brewery.city)
-    labelCityEl.textContent = brewery.city
+    labelCityEl.setAttribute('for', city)
+    labelCityEl.textContent = city
     filterByCityForm.append(inputEl, labelCityEl)
   }
   asideEl.append(h2El, filterByTypeFormEl, divEl, filterByCityForm)
   filterSection.append(asideEl)
+  selectEl.addEventListener('change', function () {
+    state.selectedByType = selectEl.value
+    render()
+  })
+
 }
+
 
 function displayBreweries() {
   const h1El = document.createElement('h1')
@@ -82,11 +91,9 @@ function displayBreweries() {
   const articleEl = document.createElement('article')
   const ulEl = document.createElement('ul')
   ulEl.setAttribute('class', 'breweries-list')
-  const listOfBreweries = filterByState()
-
-
-
-  for (const brewery of listOfBreweries) {
+  let searchedBreweries = filterByState()
+  searchedBreweries = searchedBreweries.slice(0, 10)
+  for (const brewery of searchedBreweries) {
     const liEl = document.createElement('li')
     const h2El = document.createElement('h2')
     h2El.textContent = brewery.name
@@ -127,29 +134,47 @@ function displayBreweries() {
 
 }
 
-function getData() {
-  return fetch('https://api.openbrewerydb.org/breweries').then(function (resp) {
+function getDataByState(state) {
+  return fetch(`https://api.openbrewerydb.org/breweries?by_state=${state}&per_page=50`).then(function (resp) {
     return resp.json()
   })
 }
-getData().then(function (dataFromServer) {
-  state.breweries = dataFromServer
-  console.log(state)
-  render()
-})
-
 function filterByState() {
-  return state.breweries.filter(function (brewery) {
-    return brewery.state === state.filter && (brewery.brewery_type === 'micro' || brewery.brewery_type === 'regional' || brewery.brewery_type === 'brewpub')
+
+  let listOfBreweries = state.breweries.filter(function (brewery) {
+    return brewery.state.toLowerCase().includes(state.filter.toLowerCase()) && brewery.brewery_type === 'micro' || brewery.brewery_type === 'regional' || brewery.brewery_type === 'brewpub'
+
   })
+  listOfBreweries = selectByType()
+  return listOfBreweries
 }
+function extractCitiesData(breweries) {
+  let cities = []
+  for (const brewery of breweries)
+    if (!cities.includes(brewery.city)) {
+      cities.push(brewery.city)
+    }
+  return cities
+}
+
+
 function listenToSearch() {
   searchForm.addEventListener('submit', function (event) {
     event.preventDefault()
-    state.filter = searchForm.select.value
-    render()
+    state.filter = searchForm['select-state'].value
+
+    getDataByState(state.filter).then(function (breweries) {
+      state.breweries = breweries
+      render()
+    })
     searchForm.reset()
   })
+}
+function selectByType() {
+  return state.breweries.filter(function (brewery) {
+    return brewery.brewery_type.includes(state.selectedByType)
+  })
+
 }
 listenToSearch()
 function render() {
