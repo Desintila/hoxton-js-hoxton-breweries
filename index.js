@@ -2,7 +2,8 @@ const state = {
   breweries: [],
   filter: '',
   selectedByType: '',
-  selectedByCities: []
+  selectedByCities: [],
+  searchByName: ''
 }
 const filterSection = document.querySelector('main')
 const searchForm = document.querySelector('#select-state-form')
@@ -48,6 +49,10 @@ function createFilterSection() {
   divEl.append(h3CitiesEl, buttonEl)
   const filterByCityForm = document.createElement('form')
   filterByCityForm.setAttribute('id', 'filter-by-city-form')
+  buttonEl.addEventListener('click', function () {
+    clearFilter()
+    render()
+  })
   const cities = extractCitiesData(state.breweries)
   for (const city of cities) {
     const inputEl = document.createElement('input')
@@ -101,6 +106,11 @@ function displayBreweries() {
   searchInputEl.setAttribute('type', 'text')
   searchFormEl.append(searchLabelEl, searchInputEl)
   headerEl.appendChild(searchFormEl)
+  searchFormEl.addEventListener('submit', function (event) {
+    event.preventDefault()
+    state.searchByName = searchFormEl['search-breweries'].value
+    render()
+  })
   const articleEl = document.createElement('article')
   const ulEl = document.createElement('ul')
   ulEl.setAttribute('class', 'breweries-list')
@@ -158,7 +168,7 @@ function selectByType() {
 }
 
 function filterByState() {
-  listOfBreweries = state.breweries.filter(function (brewery) {
+  let listOfBreweries = state.breweries.filter(function (brewery) {
     return brewery.brewery_type === 'micro' || brewery.brewery_type === 'regional' || brewery.brewery_type === 'brewpub'
   })
   if (state.selectedByType !== '') {
@@ -169,7 +179,9 @@ function filterByState() {
       return state.selectedByCities.includes(brewery.city)
     })
   }
-
+  listOfBreweries = listOfBreweries.filter(function (brewery) {
+    return brewery.city.toLowerCase().includes(state.searchByName.toLowerCase()) || brewery.name.toLowerCase().includes(state.searchByName.toLowerCase())
+  })
   return listOfBreweries
 }
 function extractCitiesData(breweries) {
@@ -189,10 +201,16 @@ function listenToSearch() {
       state.breweries = breweries
       state.selectedByCities = []
       state.selectedByType = ''
+      state.searchByName = ''
       render()
     })
     searchForm.reset()
   })
+}
+function clearFilter() {
+  state.selectedByCities = []
+  state.selectedByType = ''
+  state.searchByName = ''
 }
 listenToSearch()
 function render() {
